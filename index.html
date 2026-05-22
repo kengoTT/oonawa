@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>大縄タイミング練習</title>
+<style>
+  body {
+    font-family: sans-serif;
+    text-align: center;
+    background: #f4f8ff;
+    padding: 20px;
+  }
+
+  h1 {
+    margin-bottom: 10px;
+  }
+
+  .settings {
+    margin: 15px;
+    font-size: 18px;
+  }
+
+  select, button {
+    font-size: 20px;
+    padding: 10px 18px;
+    margin: 8px;
+  }
+
+  #jumpButton {
+    font-size: 32px;
+    padding: 25px 60px;
+    border-radius: 16px;
+  }
+
+  #stage {
+    position: relative;
+    width: 500px;
+    height: 260px;
+    margin: 20px auto;
+    background: #dff1ff;
+    border: 3px solid #333;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .person {
+    position: absolute;
+    bottom: 35px;
+    left: 230px;
+    font-size: 48px;
+  }
+
+  .rope {
+    position: absolute;
+    width: 360px;
+    height: 180px;
+    border: 8px solid #8b5a2b;
+    border-bottom: none;
+    border-radius: 180px 180px 0 0;
+    left: 65px;
+    top: 40px;
+    transform-origin: center bottom;
+  }
+
+  .rope.rotate {
+    animation: ropeMove 1s linear infinite;
+  }
+
+  @keyframes ropeMove {
+    0% {
+      transform: rotate(0deg);
+    }
+    50% {
+      transform: rotate(180deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  #timingLine {
+    position: absolute;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: red;
+  }
+
+  #result {
+    font-size: 24px;
+    margin-top: 15px;
+  }
+
+  #score {
+    font-size: 26px;
+    font-weight: bold;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>大縄タイミング練習ゲーム</h1>
+
+<div class="settings">
+  成功範囲：
+  <select id="toleranceSelect">
+    <option value="200">やさしい ±0.20秒</option>
+    <option value="100">ふつう ±0.10秒</option>
+    <option value="50">むずかしい ±0.05秒</option>
+  </select>
+
+  リズム：
+  <select id="intervalSelect">
+    <option value="1200">ゆっくり 1.2秒</option>
+    <option value="1000" selected>ふつう 1.0秒</option>
+    <option value="800">速い 0.8秒</option>
+  </select>
+</div>
+
+<button id="startButton">スタート</button>
+
+<div id="stage">
+  <div id="rope" class="rope"></div>
+  <div class="person">🧍</div>
+  <div id="timingLine"></div>
+</div>
+
+<button id="jumpButton" disabled>ジャンプ！</button>
+
+<div id="result">スタートを押してください</div>
+<div id="score">連続成功：0回</div>
+
+<script>
+  let interval = 1000;
+  let tolerance = 100;
+
+  let startTime = 0;
+  let nextTiming = 0;
+  let score = 0;
+  let playing = false;
+
+  const startButton = document.getElementById("startButton");
+  const jumpButton = document.getElementById("jumpButton");
+  const result = document.getElementById("result");
+  const scoreText = document.getElementById("score");
+  const toleranceSelect = document.getElementById("toleranceSelect");
+  const intervalSelect = document.getElementById("intervalSelect");
+  const rope = document.getElementById("rope");
+
+  startButton.addEventListener("click", () => {
+    interval = Number(intervalSelect.value);
+    tolerance = Number(toleranceSelect.value);
+
+    score = 0;
+    playing = true;
+
+    startTime = performance.now();
+    nextTiming = startTime + interval;
+
+    jumpButton.disabled = false;
+    result.textContent = "大縄が下に来るタイミングで押そう！";
+    scoreText.textContent = "連続成功：0回";
+
+    rope.classList.remove("rotate");
+    void rope.offsetWidth;
+    rope.style.animationDuration = interval + "ms";
+    rope.classList.add("rotate");
+  });
+
+  jumpButton.addEventListener("click", () => {
+    if (!playing) return;
+
+    const now = performance.now();
+    const diff = now - nextTiming;
+    const absDiff = Math.abs(diff);
+
+    if (absDiff <= tolerance) {
+      score++;
+      result.textContent =
+        `成功！ズレ：${(diff / 1000).toFixed(3)}秒`;
+      scoreText.textContent = `連続成功：${score}回`;
+
+      nextTiming += interval;
+    } else {
+      playing = false;
+      jumpButton.disabled = true;
+      rope.classList.remove("rotate");
+
+      const message = diff < 0 ? "早すぎました" : "遅すぎました";
+      result.textContent =
+        `終了！${message}。ズレ：${(diff / 1000).toFixed(3)}秒`;
+    }
+  });
+</script>
+
+</body>
+</html>
